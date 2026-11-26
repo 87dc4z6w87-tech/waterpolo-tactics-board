@@ -1,0 +1,420 @@
+/* ==========================================================================
+   stile.css — aspetto grafico della lavagna
+   I colori principali sono "variabili" (--nome) definite qui sotto:
+   cambiandole in un punto solo si aggiorna tutta l'app.
+   ========================================================================== */
+
+:root {
+  color-scheme: dark; /* l'app è sempre scura: anche barre di scorrimento e caselle */
+  --sfondo-centro: #18325c;
+  --sfondo-medio: #0c1a35;
+  --sfondo-bordo: #060d1c;
+  --testo: #e6edf7;
+  --testo-tenue: #7f8ba0;
+  --barra: rgba(255, 255, 255, 0.06);
+  --barra-bordo: rgba(255, 255, 255, 0.09);
+  --icona: #c3d0e4;
+  --evidenza: rgba(90, 150, 255, 0.24);
+  --pannello: #14213b;
+  --rosso: #e8344e;
+  --blu: #3d7fc6;
+  --grigio: #a3a8b0;
+  --giallo: #f8e27e;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  /* Blu notte con una sfumatura più chiara al centro */
+  background: radial-gradient(ellipse at center, var(--sfondo-centro) 0%, var(--sfondo-medio) 55%, var(--sfondo-bordo) 100%);
+  background-color: var(--sfondo-bordo);
+  color: var(--testo);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* Niente selezione del testo e niente riquadro grigio al tocco su tablet */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Tre colonne: barra sinistra | campo | barra destra */
+#app {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  height: 100%; /* alto quanto la pagina (html e body sono al 100%) */
+  padding: 10px;
+}
+
+/* ---------- Barre di icone ---------- */
+.barra {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background: var(--barra);
+  border: 1px solid var(--barra-bordo);
+  border-radius: 24px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.barra button {
+  width: 48px;
+  height: 48px;
+  border: none;
+  border-radius: 15px;
+  background: transparent;
+  color: var(--icona);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.barra button:hover { background: rgba(255, 255, 255, 0.08); }
+.barra button.attivo,
+.barra button.aperto { background: var(--evidenza); color: #fff; }
+.barra button.in-arrivo { opacity: 0.35; }
+.barra button[hidden] { display: none; }
+
+/* Icone a linea, tutte dello stesso stile */
+.barra svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---------- Campo ---------- */
+#zona-campo {
+  position: relative;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+#lavagna {
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;   /* il dito sul campo trascina, non scorre la pagina */
+}
+.pezzo { cursor: grab; }
+.pezzo.preso { cursor: grabbing; }
+
+/* ---------- Nome dello schema ---------- */
+#nome-schema {
+  position: fixed;
+  top: 8px;
+  right: 16px;
+  font-size: 12px;
+  color: var(--testo-tenue);
+  pointer-events: none;
+}
+
+/* Pedina trascinata fuori dal campo: lasciandola lì viene tolta */
+.pezzo.fuori { opacity: 0.35; }
+
+/* ---------- Avviso breve ---------- */
+#avviso {
+  position: fixed;
+  left: 50%;
+  top: 14px;
+  transform: translateX(-50%);
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(20, 33, 59, 0.95);
+  border: 1px solid var(--barra-bordo);
+  font-size: 13px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+#avviso.visibile { opacity: 1; }
+
+/* ---------- Pannelli che si aprono dalle barre ---------- */
+.pannello {
+  position: fixed;
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 220px;
+  max-height: calc(100vh - 24px);
+  overflow-y: auto;
+  padding: 12px;
+  background: var(--pannello);
+  border: 1px solid var(--barra-bordo);
+  border-radius: 18px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  z-index: 10;
+}
+.pannello.aperto { display: flex; }
+.pannello h3 {
+  margin: 6px 6px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--testo-tenue);
+}
+.pannello h3:not(:first-child) { margin-top: 12px; }
+.pannello button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--testo);
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+}
+.pannello button:hover { background: rgba(255, 255, 255, 0.06); }
+.pannello button.scelto { background: var(--evidenza); }
+.pannello .nota {
+  margin: 8px 6px 2px;
+  font-size: 12px;
+  color: var(--testo-tenue);
+  max-width: 220px;
+}
+
+/* Voce con sottotitolo (es. "Campo piccoli" + "19 × 9 m · 6 contro 6") */
+.pannello .voce { display: flex; flex-direction: column; gap: 2px; }
+.pannello .voce small { font-size: 12px; color: var(--testo-tenue); }
+
+/* Elenchi creati da app.js: voci una sotto l'altra, larghe quanto il pannello */
+#elenco-formazioni, #elenco-superiorita, #elenco-dimensioni { display: flex; flex-direction: column; gap: 2px; }
+
+/* Menu a tendina dentro un pannello (es. "Difesa a zona") */
+.pannello [data-tendina] { justify-content: space-between; }
+.pannello .freccia { color: var(--testo-tenue); font-size: 16px; line-height: 1; transition: transform 0.15s; }
+.pannello [data-tendina].aperta .freccia { transform: rotate(180deg); }
+.pannello .tendina { display: none; flex-direction: column; gap: 2px; padding-left: 14px; }
+.pannello [data-tendina].aperta + .tendina { display: flex; }
+.pannello .tendina button { font-size: 14px; min-height: 40px; }
+
+/* Pannello Disegno: icone e anteprime delle frecce */
+.pannello .icona, .pannello .anteprima {
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.pannello .icona { width: 20px; height: 20px; }
+.pannello .anteprima { width: 40px; height: 14px; stroke-width: 2; }
+.pannello .anteprima .piena { fill: currentColor; stroke: none; }
+.colori { display: flex; gap: 10px; padding: 4px 8px 8px; }
+.pannello .colori button {
+  width: 34px;
+  min-height: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+.pannello .colori button.scelto { border-color: #ffffff; background-clip: padding-box; }
+.riga-azioni { display: flex; gap: 4px; margin-top: 6px; }
+.pannello .riga-azioni button { flex: 1; justify-content: center; }
+.pannello button:disabled { opacity: 0.35; cursor: default; }
+
+/* Con uno strumento di disegno attivo le pedine non si prendono: il dito disegna */
+#lavagna.modalita-disegno { cursor: crosshair; }
+#lavagna.modalita-disegno #strato-pezzi { pointer-events: none; }
+/* La "linea invisibile" dei disegni si tocca solo con la gomma */
+#strato-disegni .colpo { pointer-events: none; }
+#lavagna.modalita-gomma #strato-disegni .colpo { pointer-events: stroke; }
+
+/* Pulsanti nascosti nei pannelli (es. "Salva come nuovo") */
+.pannello button[hidden] { display: none; }
+
+/* Pannello Salva: caselle di testo e categorie rapide */
+.campo-testo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 4px 6px 8px;
+  font-size: 12px;
+  color: var(--testo-tenue);
+}
+.campo-testo input {
+  font: inherit;
+  font-size: 16px; /* 16px: su iPhone/iPad evita lo zoom automatico */
+  color: var(--testo);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--barra-bordo);
+  border-radius: 10px;
+  padding: 10px 12px;
+  min-width: 240px;
+  outline: none;
+  -webkit-user-select: text;
+  user-select: text;
+}
+.campo-testo input:focus { border-color: rgba(90, 150, 255, 0.7); }
+.pannello button.principale { justify-content: center; background: var(--evidenza); font-weight: 600; }
+
+.elenco-verticale { display: flex; flex-direction: column; gap: 2px; }
+#salva-senza-schema, #salva-con-schema { display: flex; flex-direction: column; gap: 4px; }
+#salva-senza-schema[hidden], #salva-con-schema[hidden] { display: none; }
+
+/* ---------- Barra dei fotogrammi (schemi animati) ---------- */
+#barra-fotogrammi {
+  position: fixed;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(100vw - 32px);
+  padding: 6px 8px;
+  background: var(--barra);
+  border: 1px solid var(--barra-bordo);
+  border-radius: 20px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 5;
+}
+#barra-fotogrammi[hidden] { display: none; }
+#barra-fotogrammi button {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 13px;
+  background: transparent;
+  color: var(--icona);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+#barra-fotogrammi button:hover { background: rgba(255, 255, 255, 0.08); }
+#barra-fotogrammi button:disabled { opacity: 0.35; cursor: default; }
+#barra-fotogrammi svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+#pulsante-riproduci { background: var(--evidenza) !important; color: #fff !important; }
+#pulsante-riproduci svg { fill: currentColor; stroke: none; }
+#elenco-fotogrammi { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+#elenco-fotogrammi button { background: rgba(255, 255, 255, 0.05); }
+#elenco-fotogrammi button.scelto { background: rgba(255, 255, 255, 0.9); color: #0c1a35; }
+/* Spazio in basso per la barra, così il campo non ci finisce sotto */
+body.con-fotogrammi #app { padding-bottom: 72px; }
+/* Durante la riproduzione il campo non si tocca */
+#lavagna.in-riproduzione { pointer-events: none; }
+
+/* ---------- Finestra "Nuovo schema" ---------- */
+.sfondo-finestra {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(3, 8, 20, 0.6);
+  z-index: 20;
+}
+.sfondo-finestra[hidden] { display: none; }
+.pannello.finestra {
+  position: static;
+  display: flex;
+  width: min(380px, 100%);
+  max-height: calc(100dvh - 32px);
+  padding: 18px;
+}
+.finestra h2 { margin: 2px 6px 10px; font-size: 18px; font-weight: 600; }
+#sezione-partenza[hidden] { display: none; }
+#partenze-schema button { background: rgba(255, 255, 255, 0.06); font-weight: 600; }
+#partenze-schema button.scelto { background: var(--evidenza); }
+.finestra .campo-testo input { min-width: 0; width: 100%; }
+#avviso { z-index: 30; } /* i messaggi restano sopra la finestra */
+#finestra-conferma { z-index: 25; }
+.testo-conferma { margin: 4px 6px 14px; font-size: 15px; line-height: 1.45; }
+
+.pannello button.nuovo-schema { margin-top: 8px; gap: 8px; }
+#barra-fotogrammi .separatore { flex: none; width: 1px; height: 28px; background: var(--barra-bordo); margin: 0 2px; }
+
+/* Pannello Schemi: cartelle per categoria */
+.pannello button.cartella { font-weight: 600; }
+.pannello .cartella .nome-cartella { flex: 1; }
+.pannello .cartella small { color: var(--testo-tenue); font-weight: 400; font-size: 12px; }
+.pannello .cartella .freccia { flex: none; }
+.pannello .cartella + .tendina { padding-left: 10px; }
+
+/* Pannello Schemi: una riga per schema (nome + cestino) */
+#elenco-schemi { display: flex; flex-direction: column; gap: 2px; max-width: 300px; }
+.riga-schema { display: flex; gap: 2px; }
+.pannello .riga-schema [data-apri-schema] { flex: 1; justify-content: space-between; min-width: 0; }
+.pannello .riga-schema small { font-size: 11px; color: var(--testo-tenue); }
+.pannello .riga-schema .elimina { flex: none; width: 44px; justify-content: center; color: var(--testo-tenue); }
+.pannello .riga-schema .elimina:hover { color: var(--rosso); }
+
+/* Menu rapido dei numeri: griglia di pulsanti tondi */
+#pannello-numero { min-width: 0; }
+.griglia-numeri {
+  display: grid;
+  grid-template-columns: repeat(5, 44px);
+  gap: 6px;
+  padding: 2px;
+}
+.pannello .griglia-numeri button {
+  justify-content: center;
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+  font-weight: 600;
+}
+.pannello .griglia-numeri button.usato { opacity: 0.35; }
+.pannello .griglia-numeri button.scelto { background: var(--evidenza); opacity: 1; }
+.pannello .senza-numero {
+  justify-content: center;
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--testo-tenue);
+}
+
+/* In modalità numeri le pedine si toccano, non si trascinano */
+#lavagna.modalita-numeri .pezzo { cursor: pointer; }
+
+/* Pallini colorati nei pannelli */
+.pallino {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  flex: none;
+}
+.pallino.rossa { background: var(--rosso); }
+.pallino.blu { background: var(--blu); }
+.pallino.portiere { background: var(--grigio); border: 3px solid; }
+.pallino.bordo-rossa { border-color: var(--rosso); }
+.pallino.bordo-blu { border-color: var(--blu); }
+.pallino.pallone { background: var(--giallo); width: 12px; height: 12px; margin: 0 3px; }
+
+/* Schermi stretti (telefono in verticale): barre e pulsanti più piccoli */
+@media (max-width: 600px) {
+  #app { gap: 4px; padding: 4px; }
+  .barra { padding: 4px; border-radius: 18px; }
+  .barra button { width: 40px; height: 40px; }
+}

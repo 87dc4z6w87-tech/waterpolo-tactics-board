@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<!--
+  index.html — la pagina della lavagna.
+  Contiene: le due barre di icone, lo spazio del campo (un disegno SVG),
+  i pannelli che si aprono toccando le icone. Tutta la logica sta nei file js/.
+-->
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <!-- user-scalable=no: evita che il tablet faccia zoom mentre si trascinano i giocatori -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Lavagna pallanuoto</title>
+  <link rel="stylesheet" href="stile.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ===================== BARRA SINISTRA: STRUMENTI ===================== -->
+  <nav class="barra" id="barra-sinistra">
+    <button data-pannello="pannello-aggiungi" title="Aggiungi giocatore">
+      <svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="M19 14v7M15.5 17.5h7"/></svg>
+    </button>
+    <button data-azione="numeri" title="Numera le pedine">
+      <!-- icona "123" -->
+      <svg viewBox="0 0 24 24"><path d="M2.5 9.5L5 7.5v9"/><path d="M8.5 9.3a2 2 0 0 1 3.8.7c0 2-3.8 3.6-3.8 6.5h4"/><path d="M15.5 7.5h4l-2.4 3.3a2.6 2.6 0 1 1-1.9 4.6"/></svg>
+    </button>
+    <button data-azione="inverti" title="Inverti squadre">
+      <svg viewBox="0 0 24 24"><path d="M4 8h15l-3.5-3.5M20 16H5l3.5 3.5"/></svg>
+    </button>
+    <button data-pannello="pannello-disegno" id="pulsante-disegno" title="Frecce e disegno">
+      <svg viewBox="0 0 24 24"><path d="M4 20l1.2-4.6L16 4.6l3.4 3.4L8.6 18.8z"/><path d="M13.8 6.8l3.4 3.4"/></svg>
+    </button>
+    <button data-azione="esporta" title="Salva immagine PNG">
+      <svg viewBox="0 0 24 24"><path d="M4 8h3.2L9 5h6l1.8 3H20v11H4z"/><circle cx="12" cy="13.2" r="3.4"/></svg>
+    </button>
+  </nav>
+
+  <!-- ===================== CAMPO ===================== -->
+  <main id="zona-campo">
+    <!-- Il campo è un disegno SVG. L'unità di misura interna è il METRO:
+         un cerchio con r="0.6" è largo 1,2 metri di vasca. -->
+    <svg id="lavagna" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <!-- Ritaglio usato nella vista "metà campo" per nascondere l'altra metà -->
+        <clipPath id="ritaglio" clipPathUnits="userSpaceOnUse">
+          <rect id="rettangolo-ritaglio" x="0" y="0" width="0" height="0"/>
+        </clipPath>
+      </defs>
+      <g id="contenuto">
+        <g id="strato-campo"></g>   <!-- vasca, linee, porte (campo.js) -->
+        <g id="strato-disegni"></g> <!-- frecce e penna (disegno.js), sotto le pedine -->
+        <g id="strato-pezzi"></g>   <!-- giocatori e pallone (giocatori.js) -->
+      </g>
+    </svg>
+  </main>
+
+  <!-- ===================== BARRA DESTRA: IMPOSTAZIONI ===================== -->
+  <nav class="barra" id="barra-destra">
+    <!-- In alto: impostazioni del campo -->
+    <button data-pannello="pannello-campo" title="Tipo di campo">
+      <svg viewBox="0 0 24 24"><rect x="3.5" y="6" width="17" height="12" rx="1.5"/><path d="M12 6v12M3.5 10H2v4h1.5M20.5 10H22v4h-1.5"/></svg>
+    </button>
+    <button data-pannello="pannello-vista" title="Vista">
+      <svg viewBox="0 0 24 24"><rect x="5" y="3.5" width="14" height="17" rx="1.5"/><path d="M5 12h14M10 3.5v2.5h4V3.5"/></svg>
+    </button>
+    <!-- Sotto: formazioni a uomini pari e uomo in più, poi schemi -->
+    <button data-pannello="pannello-formazioni" title="Formazioni">
+      <svg viewBox="0 0 24 24"><circle cx="6" cy="8" r="1.8"/><circle cx="12" cy="8" r="1.8"/><circle cx="18" cy="8" r="1.8"/><circle cx="6" cy="16" r="1.8"/><circle cx="12" cy="16" r="1.8"/><circle cx="18" cy="16" r="1.8"/></svg>
+    </button>
+    <!-- Uomo in più / in meno: pallini come Formazioni, con + e − -->
+    <button data-pannello="pannello-superiorita" id="pulsante-superiorita" title="Uomo in più / in meno">
+      <svg viewBox="0 0 24 24"><circle cx="5" cy="8" r="1.8"/><circle cx="11" cy="8" r="1.8"/><circle cx="5" cy="16" r="1.8"/><circle cx="11" cy="16" r="1.8"/><path d="M15.5 8h6M18.5 5v6M15.5 16h6"/></svg>
+    </button>
+    <button data-pannello="pannello-schemi" title="Schemi">
+      <!-- icona "lavagnetta tattica": riquadro con un cerchio, una X e una freccia -->
+      <svg viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="2"/><circle cx="7.8" cy="14.6" r="1.8"/><path d="M15.4 7.6l2.6 2.6M18 7.6l-2.6 2.6"/><path d="M9.6 12.6c.6-2.2 1.9-3.3 3.9-3.4"/><path d="M12 7.9l1.6 1.3-1.4 1.6"/></svg>
+    </button>
+  </nav>
+</div>
+
+<!-- Nome dello schema aperto, in alto a destra -->
+<div id="nome-schema"></div>
+
+<!-- Finestra "Nuovo schema" (e "Nome e tipologia" di uno schema aperto) -->
+<div id="finestra-schema" class="sfondo-finestra" hidden>
+  <div class="pannello finestra" role="dialog" aria-modal="true" aria-labelledby="titolo-finestra-schema">
+    <h2 id="titolo-finestra-schema">Nuovo schema</h2>
+    <label class="campo-testo">Nome nuovo schema
+      <input id="nome-nuovo-schema" type="text" maxlength="60" placeholder="Es. Superiorità con tiro dal palo" autocomplete="off">
+    </label>
+    <h3>Tipologia</h3>
+    <div class="elenco-verticale" id="tipologie-schema"><!-- le tre categorie, da schemi.js --></div>
+    <!-- Da dove partono i giocatori (es. 4-2 o 3-3): compare dopo aver scelto la tipologia -->
+    <div id="sezione-partenza" hidden>
+      <h3>Si parte da</h3>
+      <div class="riga-azioni" id="partenze-schema"><!-- da schemi.js --></div>
+    </div>
+    <p class="nota" id="nota-finestra-schema">I giocatori si mettono nella posizione di partenza (fotogramma 1): poi aggiungi i fotogrammi con + nella barra in basso.</p>
+    <div class="riga-azioni">
+      <button data-azione="chiudi-finestra">Annulla</button>
+      <button data-azione="conferma-finestra" class="principale" id="conferma-finestra-schema">Crea schema</button>
+    </div>
+  </div>
+</div>
+
+<!-- Finestra di conferma ("Continuare?") fatta dall'app: vedi chiediConferma() in utilita.js -->
+<div id="finestra-conferma" class="sfondo-finestra" hidden>
+  <div class="pannello finestra" role="alertdialog" aria-modal="true" aria-labelledby="testo-conferma">
+    <p id="testo-conferma" class="testo-conferma"></p>
+    <div class="riga-azioni">
+      <button data-conferma="no">Annulla</button>
+      <button data-conferma="si" class="principale" id="pulsante-conferma-si">Continua</button>
+    </div>
+  </div>
+</div>
+
+<!-- Barra dei fotogrammi: compare in basso quando si lavora su uno schema animato -->
+<div id="barra-fotogrammi" hidden>
+  <button data-azione="riproduci" id="pulsante-riproduci" title="Riproduci lo schema"></button>
+  <div id="elenco-fotogrammi"><!-- un pulsante per fotogramma, da animazione.js --></div>
+  <button data-azione="aggiungi-fotogramma" title="Aggiungi fotogramma">
+    <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+  </button>
+  <button data-azione="elimina-fotogramma" title="Elimina questo fotogramma">
+    <svg viewBox="0 0 24 24"><path d="M4.5 7h15M10 7V4.5h4V7M6.5 7l1 13h9l1-13"/></svg>
+  </button>
+  <span class="separatore"></span>
+  <button data-azione="dettagli-schema" title="Nome e tipologia">
+    <svg viewBox="0 0 24 24"><path d="M4 20l1.2-4.6L16 4.6l3.4 3.4L8.6 18.8z"/></svg>
+  </button>
+  <button data-azione="salva-schema" title="Salva lo schema">
+    <svg viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></svg>
+  </button>
+  <button data-azione="chiudi-schema" title="Chiudi lo schema">
+    <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+  </button>
+</div>
+
+<!-- Messaggio breve che appare e scompare -->
+<div id="avviso"></div>
+
+<!-- ===================== PANNELLI ===================== -->
+<div class="pannello" id="pannello-aggiungi">
+  <h3>Aggiungi</h3>
+  <button data-aggiungi="giocatore" data-squadra="rossa"><span class="pallino rossa"></span>Giocatore rosso</button>
+  <button data-aggiungi="giocatore" data-squadra="blu"><span class="pallino blu"></span>Giocatore blu</button>
+  <button data-aggiungi="portiere" data-squadra="rossa"><span class="pallino portiere bordo-rossa"></span>Portiere rosso</button>
+  <button data-aggiungi="portiere" data-squadra="blu"><span class="pallino portiere bordo-blu"></span>Portiere blu</button>
+  <button data-aggiungi="pallone"><span class="pallino pallone"></span>Pallone</button>
+  <p class="nota">Per togliere una pedina trascinala fuori dal campo.</p>
+</div>
+
+<!-- SCHEMI (barra destra, cartella): tutto ciò che riguarda gli schemi sta qui -->
+<div class="pannello" id="pannello-schemi">
+  <!-- Una cartella per categoria con dentro gli schemi -->
+  <h3>Schemi</h3>
+  <div id="elenco-schemi"><!-- riempito da schemi.js --></div>
+  <!-- Apre la finestra "Nuovo schema" (nome e tipologia) -->
+  <button data-azione="apri-nuovo-schema" class="principale nuovo-schema">
+    <svg class="icona" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+    Nuovo schema
+  </button>
+
+  <h3>Condividi con gli altri allenatori</h3>
+  <button data-azione="esporta-schemi">Scarica tutti gli schemi (file)</button>
+  <button data-azione="importa-schemi">Carica schemi da file</button>
+  <input type="file" id="file-schemi" accept=".json,application/json" hidden>
+</div>
+
+<div class="pannello" id="pannello-disegno">
+  <button data-strumento="sposta">
+    <svg class="icona" viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M12 3l-2.5 2.5M12 3l2.5 2.5M12 21l-2.5-2.5M12 21l2.5-2.5M3 12l2.5-2.5M3 12l2.5 2.5M21 12l-2.5-2.5M21 12l-2.5 2.5"/></svg>
+    Sposta pedine
+  </button>
+  <h3>Frecce</h3>
+  <button data-strumento="nuotata">
+    <svg class="anteprima" viewBox="0 0 40 14"><path d="M3 7h27"/><path d="M29 3l7 4-7 4z" class="piena"/></svg>
+    Nuotata
+  </button>
+  <button data-strumento="passaggio">
+    <svg class="anteprima" viewBox="0 0 40 14"><path d="M3 7h27" stroke-dasharray="4 3" stroke-linecap="butt"/><path d="M29 3l7 4-7 4z" class="piena"/></svg>
+    Passaggio
+  </button>
+  <button data-strumento="senzaPalla">
+    <svg class="anteprima" viewBox="0 0 40 14"><path d="M3 7q2.5-4 5 0t5 0t5 0t5 0t5 0"/><path d="M29 3l7 4-7 4z" class="piena"/></svg>
+    Senza palla
+  </button>
+  <h3>Strumenti</h3>
+  <button data-strumento="penna">
+    <svg class="icona" viewBox="0 0 24 24"><path d="M4 20l1.2-4.6L16 4.6l3.4 3.4L8.6 18.8z"/></svg>
+    Penna libera
+  </button>
+  <button data-strumento="gomma">
+    <svg class="icona" viewBox="0 0 24 24"><path d="M8 20h12M5.5 14.5l8-8a2 2 0 0 1 2.8 0l2.2 2.2a2 2 0 0 1 0 2.8L12 18H9l-3.5-3.5z"/><path d="M9.5 10.5l5 5"/></svg>
+    Gomma
+  </button>
+  <h3>Colore</h3>
+  <div class="colori" id="colori-disegno"><!-- riempito da app.js con COLORI_DISEGNO --></div>
+  <div class="riga-azioni">
+    <button data-azione="annulla" title="Annulla">
+      <svg class="icona" viewBox="0 0 24 24"><path d="M9 6L4 11l5 5"/><path d="M4 11h10a5 5 0 0 1 0 10h-2"/></svg>
+      Annulla
+    </button>
+    <button data-azione="ripeti" title="Ripeti">
+      Ripeti
+      <svg class="icona" viewBox="0 0 24 24"><path d="M15 6l5 5-5 5"/><path d="M20 11H10a5 5 0 0 0 0 10h2"/></svg>
+    </button>
+  </div>
+  <button data-azione="cancella-disegni">Cancella tutti i disegni</button>
+</div>
+
+<div class="pannello" id="pannello-formazioni">
+  <p class="nota" id="info-attacco"><!-- es. "Attaccano i rossi, difendono i blu" --></p>
+  <div id="elenco-formazioni"><!-- riempito da app.js con le formazioni di dati.js --></div>
+</div>
+
+<div class="pannello" id="pannello-superiorita">
+  <p class="nota" id="info-superiorita"><!-- es. "I rossi attaccano con un uomo in più" --></p>
+  <div id="elenco-superiorita"><!-- riempito da app.js con le formazioni "Superiorità" --></div>
+</div>
+
+<div class="pannello" id="pannello-campo">
+  <h3>Tipo di campo</h3>
+  <button data-imposta="tipoCampo" data-valore="internazionale">FIN</button>
+  <button data-imposta="tipoCampo" data-valore="fin">PallanuotoItalia</button>
+  <h3>Dimensioni campo</h3>
+  <div id="elenco-dimensioni"><!-- riempito da app.js con i campi di dati.js --></div>
+</div>
+
+<div class="pannello" id="pannello-vista">
+  <h3>Vista</h3>
+  <button data-imposta="vista" data-valore="intero">Campo intero</button>
+  <button data-imposta="vista" data-valore="meta">Metà campo</button>
+</div>
+
+<!-- Menu rapido per scegliere il numero di una pedina (si apre in modalità #) -->
+<div class="pannello" id="pannello-numero">
+  <h3 id="titolo-numero">Numero</h3>
+  <div class="griglia-numeri" id="griglia-numeri"><!-- riempito da giocatori.js --></div>
+  <button data-numero="nessuno" class="senza-numero">Nessun numero</button>
+</div>
+
+<!-- I file JavaScript, in quest'ordine: ognuno usa quelli caricati prima -->
+<script src="dati.js"></script>
+<script src="js/utilita.js"></script>
+<script src="js/stato.js"></script>
+<script src="js/campo.js"></script>
+<script src="js/giocatori.js"></script>
+<script src="js/formazioni.js"></script>
+<script src="js/disegno.js"></script>
+<script src="js/esporta.js"></script>
+<script src="js/animazione.js"></script>
+<script src="js/schemi.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
